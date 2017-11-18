@@ -29,33 +29,73 @@ drawborder() {
    done
    tput setf 9
 
-   #draw obstacles
-   x=15
-   y=10
-   tput cup $x $y;
-   while [ "$x" -le "20" ];
-   do
- 	 printf %b "$WALLCHAR"
- 	 x=$(( $x + 1));
- 	done
+}
 
-   x=10
-   y=5
-   tput cup $x $y;
-   while [ "$x" -le "20" ];
+drawborder2() {
+   # Draw top
+   tput setf 6
+   tput cup $FIRSTROW $FIRSTCOL
+   x=$FIRSTCOL
+   while [ "$x" -le "$LASTCOL" ];
    do
- 	 printf %b "$WALLCHAR"
- 	 x=$(( $x + 1));
- 	done
+      printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
 
- 	x=10
+   # Draw sides
+   x=$FIRSTROW
    while [ "$x" -le "$LASTROW" ];
    do
       tput cup $x $FIRSTCOL; printf %b "$WALLCHAR"
       tput cup $x $LASTCOL; printf %b "$WALLCHAR"
       x=$(( $x + 1 ));
    done
+
+   # Draw bottom
+   tput cup $LASTROW $FIRSTCOL
+   x=$FIRSTCOL
+   while [ "$x" -le "$LASTCOL" ];
+   do
+      printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
+   tput setf 9
+
+#draw obstacles
+   tput setf 6
+   R1a=9
+   C1a=5
+
+   tput cup $R1a $C1a
+   x=$C1a
+   while [ "$x" -le "$LASTCOL" ];
+   do
+      printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
+
+   R1b=12
+   C1b=6
+   x=$R1b
+   while [ "$x" -le "$LASTROW" ];
+   do
+      tput cup $x $C1b; printf %b "$WALLCHAR"
+      tput cup $x $LASTCOL; printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
+
+   R1c=3
+   C1c=25
+   LRc=7
+   x=$R1c
+   while [ "$x" -le "$LRc" ];
+   do
+      tput cup $x $C1c; printf %b "$WALLCHAR"
+      tput cup $x $LASTCOL; printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
 }
+
 TPUT(){ echo -en "\033[${1};${2}H";} 
 COLPUT(){ echo -en "\033[${1}G";} 
 
@@ -99,6 +139,89 @@ growsnake() {
    done
    drawapple
 }
+move2()
+{
+   case "$DIRECTION" in
+      u) POSY=$(( $POSY - 1 ));;
+      d) POSY=$(( $POSY + 1 ));;
+      l) POSX=$(( $POSX - 1 ));;
+      r) POSX=$(( $POSX + 1 ));;
+   esac
+
+   # Collision detection
+   ( sleep $DELAY && kill -ALRM $$ ) &
+   if [ "$POSX" -le "$FIRSTCOL" ] || [ "$POSX" -ge "$LASTCOL" ] ; then
+      tput cup $(( $LASTROW + 1 )) 0
+      stty echo
+      echo " OUCH!! YOU BUMPED INTO A WALL"
+      gameover
+   elif [ "$POSY" -le "$FIRSTROW" ] || [ "$POSY" -ge "$LASTROW" ] ; then
+      tput cup $(( $LASTROW + 1 )) 0
+      stty echo
+      echo " OUCH!YOU BUMPED INTO A WALL"
+      gameover
+   elif [ $POSY -eq $R1a ] && [ $POSX -ge $C1a ] ; then
+       tput cup $(( $LASTROW + 1 )) 0
+         echo "AAAAAHHHHHH!!! YOU BUMPED INTO THE WALL!!!"
+         gameover 
+   elif [ $POSY -ge $R1b ] && [ $POSX -eq $C1b ] ; then
+       tput cup $(( $LASTROW + 1 )) 0
+         echo "AAAAAHHHHHH!!! YOU BUMPED INTO THE WALL!!!"
+         gameover
+   elif [ $POSY -ge $R1c ] && [ $POSX -eq $C1c ] && [ $POSY -le $LRc ] ; then
+       tput cup $(( $LASTROW + 1 )) 0
+         echo "AAAAAHHHHHH!!! YOU BUMPED INTO THE WALL!!!"
+         gameover
+      fi
+     
+
+    
+   # Get Last Element of Array ref
+   LASTEL=$(( ${#LASTPOSX[@]} - 1 ))
+   #tput cup $ROWS 0
+   #printf "LASTEL: $LASTEL"
+
+   x=1 # set starting element to 1 as pos 0 should be undrawn further down (end of tail)
+   while [ "$x" -le "$LASTEL" ];
+   do
+      if [ "$POSX" = "${LASTPOSX[$x]}" ] && [ "$POSY" = "${LASTPOSY[$x]}" ];
+      then
+         tput cup $(( $LASTROW + 1 )) 0
+         echo " YIKES!Looks like you ate yourself!"
+         gameover
+      fi
+      x=$(( $x + 1 ))
+   done
+
+   # clear the oldest position on screen
+   tput cup ${LASTPOSY[0]} ${LASTPOSX[0]}
+   printf " "
+
+   # truncate position history by 1 (get rid of oldest)
+   LASTPOSX=( `echo "${LASTPOSX[@]}" | cut -d " " -f 2-` $POSX )
+   LASTPOSY=( `echo "${LASTPOSY[@]}" | cut -d " " -f 2-` $POSY )
+   tput cup 1 10
+   #echo "LASTPOSX array ${LASTPOSX[@]} LASTPOSY array ${LASTPOSY[@]}"
+   tput cup 2 10
+   echo "SIZE=${#LASTPOSX[@]}"
+
+   # update position history (add last to highest val)
+   LASTPOSX[$LASTEL]=$POSX
+   LASTPOSY[$LASTEL]=$POSY
+
+   # plot new position
+    tput setf 2
+   tput cup $POSY $POSX
+   printf %b "$SNAKECHAR"
+   tput setf 9
+
+   # Check if we hit an apple
+   if [ "$POSX" -eq "$APPLEX" ] && [ "$POSY" -eq "$APPLEY" ]; then
+      growsnake
+      updatescore 10
+       
+   fi
+}
 
 move() {
    case "$DIRECTION" in
@@ -120,7 +243,9 @@ move() {
       stty echo
       echo " OUCH!YOU BUMPED INTO A WALL"
       gameover
-   fi
+
+  fi
+   
 
    # Get Last Element of Array ref
    LASTEL=$(( ${#LASTPOSX[@]} - 1 ))
@@ -172,6 +297,38 @@ updatescore() {
    SCORE=$(( $SCORE + $1 ))
    tput cup 2 30
    printf "SCORE: $SCORE"
+   if [ $SCORE ==  40 ]
+      then
+      clear
+         echo "CONGRATULATIONS...YOU HAVE CLEARED LEVEL 1."
+         sleep 2
+      clear
+
+   drawborder2
+   drawapple
+   move2
+   while :
+do
+   read -s -n 1 key
+   case "$key" in
+   w)   DIRECTION="u";;
+   s)   DIRECTION="d";;
+   a)   DIRECTION="l";;
+   d)   DIRECTION="r";;
+   x)   tput cup $COLS 0
+        echo "Quitting..."
+        tput cvvis
+        stty echo
+        tput reset
+        printf "Bye Bye!\n"
+        trap exit ALRM
+        sleep $DELAY
+        stty echo
+      tput cnorm
+        exit 0;;
+   esac
+done
+fi
 }
 randomchar() {
     [ $# -eq 0 ] && return 1
@@ -194,9 +351,9 @@ gameover() {
 { 
  echo -en "\033c\033[0;1m\033[37;40m\033[J";
 }
-SNAKECHAR=">"                           # Character to use for snake
-WALLCHAR="*"                            # Character to use for wall
-APPLECHAR="☻"                           # Character to use for apples
+SNAKECHAR="Ѳ"                           # Character to use for snake
+WALLCHAR="+"                            # Character to use for wall
+APPLECHAR="Ȍ"                           # Character to use for apples
 #
 SNAKESIZE=3                             # Initial Size of array aka snake
 DELAY=0.2                               # Timer delay for move function
@@ -224,18 +381,14 @@ clear
 BLACK
 
 echo "
-
 							Welcome to Nilipede 2.0
-
 			After a long and tiring day, Nilipede has to wander through a maze filled with
 			danger and obstacles to collect food for her and her kids. Help her navigate
 			by using the following keys:
-
 			W-UP
 			A-LEFT
 			S-DOWN
 			D-RIGHT
-
 					Press Return to continue. Press Q to exit from the game.
 "        					
 
@@ -282,3 +435,4 @@ do
         exit 0;;
    esac
 done
+

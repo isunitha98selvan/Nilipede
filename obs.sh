@@ -1,5 +1,5 @@
 #!/bin/bash
-drawborder() {
+drawborder2() {
    # Draw top
    tput setf 6
    tput cup $FIRSTROW $FIRSTCOL
@@ -29,34 +29,43 @@ drawborder() {
    done
    tput setf 9
 
-   #draw obstacles
-   x=15
-   y=10
-   tput cup $x $y;
-   while [ "$x" -le "20" ];
-   do
- 	 printf %b "$WALLCHAR"
- 	 x=$(( $x + 1));
- 	done
+#draw obstacles
+   tput setf 6
+   R1a=9
+   C1a=5
 
-   x=10
-   y=5
-   tput cup $x $y;
-   while [ "$x" -le "20" ];
+   tput cup $R1a $C1a
+   x=$C1a
+   while [ "$x" -le "$LASTCOL" ];
    do
- 	 printf %b "$WALLCHAR"
- 	 x=$(( $x + 1));
- 	done
+      printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
 
- 	x=10
+   R1b=12
+   C1b=6
+   x=$R1b
    while [ "$x" -le "$LASTROW" ];
    do
-      tput cup $x $FIRSTCOL; printf %b "$WALLCHAR"
+      tput cup $x $C1b; printf %b "$WALLCHAR"
+      tput cup $x $LASTCOL; printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
+
+   R1c=3
+   C1c=25
+   LRc=7
+   x=$R1c
+   while [ "$x" -le "$LRc" ];
+   do
+      tput cup $x $C1c; printf %b "$WALLCHAR"
       tput cup $x $LASTCOL; printf %b "$WALLCHAR"
       x=$(( $x + 1 ));
    done
 }
+
 TPUT(){ echo -en "\033[${1};${2}H";} 
+
 COLPUT(){ echo -en "\033[${1}G";} 
 
 apple() {
@@ -77,6 +86,15 @@ drawapple() {
          # Invalid coords... in use
          x=0
          apple
+      elif [ $APPLEY -eq $R1a ] && [ $APPLEX -ge $C1a ] ; then
+           x=0
+           apple 
+      elif [ $APPLEY -ge $R1b ] && [ $APPLEX -eq $C1b ] ; then
+           x=0
+           apple 
+      elif [ $APPLEY -ge $R1c ] && [ $APPLEX -eq $C1c ] && [ $APPLEY -le $LRc ] ; then
+           x=0
+           apple 
       else
          x=$(( $x + 1 ))
       fi
@@ -120,8 +138,22 @@ move() {
       stty echo
       echo " OUCH!YOU BUMPED INTO A WALL"
       gameover
-   fi
+   elif [ $POSY -eq $R1a ] && [ $POSX -ge $C1a ] ; then
+       tput cup $(( $LASTROW + 1 )) 0
+         echo "AAAAAHHHHHH!!! YOU BUMPED INTO THE WALL!!!"
+         gameover 
+   elif [ $POSY -ge $R1b ] && [ $POSX -eq $C1b ] ; then
+       tput cup $(( $LASTROW + 1 )) 0
+         echo "AAAAAHHHHHH!!! YOU BUMPED INTO THE WALL!!!"
+         gameover
+   elif [ $POSY -ge $R1c ] && [ $POSX -eq $C1c ] && [ $POSY -le $LRc ] ; then
+       tput cup $(( $LASTROW + 1 )) 0
+         echo "AAAAAHHHHHH!!! YOU BUMPED INTO THE WALL!!!"
+         gameover
+      fi
+     
 
+    
    # Get Last Element of Array ref
    LASTEL=$(( ${#LASTPOSX[@]} - 1 ))
    #tput cup $ROWS 0
@@ -156,7 +188,7 @@ move() {
    LASTPOSY[$LASTEL]=$POSY
 
    # plot new position
-   tput setf 2
+    tput setf 2
    tput cup $POSY $POSX
    printf %b "$SNAKECHAR"
    tput setf 9
@@ -165,14 +197,20 @@ move() {
    if [ "$POSX" -eq "$APPLEX" ] && [ "$POSY" -eq "$APPLEY" ]; then
       growsnake
       updatescore 10
+       
    fi
 }
 
 updatescore() {
    SCORE=$(( $SCORE + $1 ))
+#   if [ $SCORE -ge 20 ]
+#    then clear
+#        drawborder2
+  #  fi
    tput cup 2 30
    printf "SCORE: $SCORE"
 }
+
 randomchar() {
     [ $# -eq 0 ] && return 1
     n=$(( ($RANDOM % $#) + 1 ))
@@ -182,22 +220,24 @@ randomchar() {
 #function for obstacles
 gameover() {
    tput cvvis
-   stty echo
+   stty sane
    sleep $DELAY
    trap exit ALRM
    tput cup $ROWS 0
-   clear
+   #clear
    tput cnorm
+   stty echo
    exit
 }
  BLACK()
 { 
  echo -en "\033c\033[0;1m\033[37;40m\033[J";
 }
-SNAKECHAR=">"                           # Character to use for snake
-WALLCHAR="*"                            # Character to use for wall
-APPLECHAR="☻"                           # Character to use for apples
-#
+
+SNAKECHAR="Ѳ"                           # Character to use for snake
+WALLCHAR="+"                            # Character to use for wall
+APPLECHAR="Ȍ"                         # Character to use for apples
+
 SNAKESIZE=3                             # Initial Size of array aka snake
 DELAY=0.2                               # Timer delay for move function
 FIRSTROW=3                              # First row of game area
@@ -245,12 +285,13 @@ read RTN
 tput setb 0
 tput bold
 clear
-drawborder
+drawborder2
 updatescore 0
 
 # Draw the first apple on the screen
 # (has collision detection to ensure we don't draw
 # over snake)
+
 drawapple
 sleep 1
 trap move ALRM

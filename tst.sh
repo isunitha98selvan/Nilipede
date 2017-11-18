@@ -1,5 +1,5 @@
 #!/bin/bash
-drawborder() {
+drawborder2() {
    # Draw top
    tput setf 6
    tput cup $FIRSTROW $FIRSTCOL
@@ -30,33 +30,42 @@ drawborder() {
    tput setf 9
 
    #draw obstacles
-   x=15
-   y=10
-   tput cup $x $y;
-   while [ "$x" -le "20" ];
-   do
- 	 printf %b "$WALLCHAR"
- 	 x=$(( $x + 1));
- 	done
+   tput setf 6
+   R1a=9
+   C1a=5
 
-   x=10
-   y=5
-   tput cup $x $y;
-   while [ "$x" -le "20" ];
+   tput cup $R1a $C1a
+   x=$R1a
+   while [ "$x" -le "$LASTCOL" ];
    do
- 	 printf %b "$WALLCHAR"
- 	 x=$(( $x + 1));
- 	done
+      printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
 
- 	x=10
+   R1b=12
+   C1b=6
+   x=$R1
    while [ "$x" -le "$LASTROW" ];
    do
-      tput cup $x $FIRSTCOL; printf %b "$WALLCHAR"
+      tput cup $x $C1b; printf %b "$WALLCHAR"
       tput cup $x $LASTCOL; printf %b "$WALLCHAR"
       x=$(( $x + 1 ));
    done
+
+   R1c=3
+   C1c=25
+   LRc=7
+   x=$R1
+   while [ "$x" -le "$LRc" ];
+   do
+      tput cup $x $C1c; printf %b "$WALLCHAR"
+      #tput cup $x $LASTCOL; printf %b "$WALLCHAR"
+      x=$(( $x + 1 ));
+   done
 }
+
 TPUT(){ echo -en "\033[${1};${2}H";} 
+
 COLPUT(){ echo -en "\033[${1}G";} 
 
 apple() {
@@ -164,15 +173,22 @@ move() {
    # Check if we hit an apple
    if [ "$POSX" -eq "$APPLEX" ] && [ "$POSY" -eq "$APPLEY" ]; then
       growsnake
-      updatescore 10
+      updatescore 10       
    fi
+   
+   
 }
 
 updatescore() {
    SCORE=$(( $SCORE + $1 ))
+#   if [ $SCORE -ge 20 ]
+#    then clear
+#        drawborder2
+  #  fi
    tput cup 2 30
    printf "SCORE: $SCORE"
 }
+
 randomchar() {
     [ $# -eq 0 ] && return 1
     n=$(( ($RANDOM % $#) + 1 ))
@@ -188,16 +204,18 @@ gameover() {
    tput cup $ROWS 0
    clear
    tput cnorm
+   stty sane
    exit
 }
  BLACK()
 { 
  echo -en "\033c\033[0;1m\033[37;40m\033[J";
 }
-SNAKECHAR=">"                           # Character to use for snake
-WALLCHAR="*"                            # Character to use for wall
-APPLECHAR="☻"                           # Character to use for apples
-#
+
+SNAKECHAR="Ѳ"                           # Character to use for snake
+WALLCHAR="+"                            # Character to use for wall
+APPLECHAR="Ȍ"                         # Character to use for apples
+
 SNAKESIZE=3                             # Initial Size of array aka snake
 DELAY=0.2                               # Timer delay for move function
 FIRSTROW=3                              # First row of game area
@@ -245,12 +263,13 @@ read RTN
 tput setb 0
 tput bold
 clear
-drawborder
+drawborder2
 updatescore 0
 
 # Draw the first apple on the screen
 # (has collision detection to ensure we don't draw
 # over snake)
+
 drawapple
 sleep 1
 trap move ALRM
