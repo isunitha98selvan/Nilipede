@@ -30,69 +30,36 @@ drawborder2() {
    tput setf 9
 
    #draw obstacles
-    tput setf 6
-   R1=9
-   C1=5
-
-   tput cup $R1 $C1
-   x=$R1
-   while [ "$x" -le "$LASTCOL" ];
-   do
-      printf %b "$WALLCHAR"
-      x=$(( $x + 1 ));
-   done
-
-   R1=12
-   C1=6
-   x=$R1
-   while [ "$x" -le "$LASTROW" ];
-   do
-      tput cup $x $C1; printf %b "$WALLCHAR"
-      tput cup $x $LASTCOL; printf %b "$WALLCHAR"
-      x=$(( $x + 1 ));
-   done
-
-   R1=3
-   C1=25
-   LR=7
-   x=$R1
-   while [ "$x" -le "$LASTROW" ];
-   do
-      tput cup $x $C1; printf %b "$WALLCHAR"
-      tput cup $x $LASTCOL; printf %b "$WALLCHAR"
-      x=$(( $x + 1 ));
-   done
-   #draw obstacles
    tput setf 6
-   R1=9
-   C1=5
+   R1a=9
+   C1a=5
 
-   tput cup $R1 $C1
-   x=$R1
+   tput cup $R1a $C1a
+   x=$R1a
    while [ "$x" -le "$LASTCOL" ];
    do
       printf %b "$WALLCHAR"
       x=$(( $x + 1 ));
    done
 
-   R1=12
-   C1=6
+   R1b=12
+   C1b=6
    x=$R1
    while [ "$x" -le "$LASTROW" ];
    do
-      tput cup $x $C1; printf %b "$WALLCHAR"
+      tput cup $x $C1b; printf %b "$WALLCHAR"
       tput cup $x $LASTCOL; printf %b "$WALLCHAR"
       x=$(( $x + 1 ));
    done
 
-   R1=3
-   C1=25
-   LR=7
+   R1c=3
+   C1c=25
+   LRc=7
    x=$R1
-   while [ "$x" -le "$LR" ];
+   while [ "$x" -le "$LRc" ];
    do
-      tput cup $x $C1; printf %b "$WALLCHAR"
-      tput cup $x $LASTCOL; printf %b "$WALLCHAR"
+      tput cup $x $C1c; printf %b "$WALLCHAR"
+      #tput cup $x $LASTCOL; printf %b "$WALLCHAR"
       x=$(( $x + 1 ));
    done
 }
@@ -206,9 +173,10 @@ move() {
    # Check if we hit an apple
    if [ "$POSX" -eq "$APPLEX" ] && [ "$POSY" -eq "$APPLEY" ]; then
       growsnake
-      updatescore 10
-       
+      updatescore 10       
    fi
+   
+   
 }
 
 updatescore() {
